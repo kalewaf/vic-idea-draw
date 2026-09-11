@@ -1,0 +1,224 @@
+<title>VIC Idea Draw</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --ink: #111111;
+    --ink-dim: #666666;
+    --border: #111111;
+    --rule: #DDDDDD;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  main {
+    width: 100%;
+    max-width: 560px;
+    padding: 56px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  header.page-head {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  h1 {
+    font-weight: 700;
+    font-size: clamp(28px, 6vw, 36px);
+    line-height: 1.1;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .archive-stat {
+    font-size: 13px;
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .archive-stat b { color: var(--ink); font-weight: 600; }
+
+  .draw-card {
+    border: 1px solid var(--border);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .ticker-big {
+    font-weight: 700;
+    font-size: clamp(36px, 10vw, 52px);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+
+  .company-name {
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .meta-row {
+    font-size: 13px;
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  a.open-link {
+    align-self: flex-start;
+    color: var(--ink-dim);
+    font-size: 13px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  a.open-link:hover { color: var(--ink); }
+  a.open-link:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  button#draw-btn {
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 16px;
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    padding: 14px 22px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  button#draw-btn:hover {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  button#draw-btn:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .recent {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .recent h2 {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    font-weight: 600;
+    margin: 0;
+  }
+  .recent ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .recent li {
+    font-size: 13px;
+    color: var(--ink-dim);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    gap: 12px;
+  }
+  .recent li:last-child { border-bottom: none; }
+  .recent li .rt { color: var(--ink); font-weight: 600; min-width: 4.5em; }
+</style>
+
+<main>
+  <header class="page-head">
+    <div class="eyebrow">Value Investors Club</div>
+    <h1>Idea Draw</h1>
+    <div class="archive-stat" id="archive-stat"></div>
+  </header>
+
+  <section class="draw-card" id="draw-card">
+    <div class="ticker-big" id="ticker-big">&mdash;</div>
+    <div class="company-name" id="company-name">&mdash;</div>
+    <div class="meta-row">
+      <span id="date-added">&mdash;</span>
+    </div>
+    <a class="open-link" id="open-link" href="#" target="_blank" rel="noopener">look it up on VIC</a>
+  </section>
+
+  <button id="draw-btn" type="button">Draw another idea</button>
+
+  <section class="recent">
+    <h2>Previously drawn this session</h2>
+    <ul id="recent-list"></ul>
+  </section>
+</main>
+
+<script>
+const VIC_IDEAS = __VIC_DATA_PLACEHOLDER__;
+const SCRAPE_NOTE = "__VIC_STATS_PLACEHOLDER__";
+
+const els = {
+  archiveStat: document.getElementById('archive-stat'),
+  drawCard: document.getElementById('draw-card'),
+  tickerBig: document.getElementById('ticker-big'),
+  companyName: document.getElementById('company-name'),
+  dateAdded: document.getElementById('date-added'),
+  openLink: document.getElementById('open-link'),
+  drawBtn: document.getElementById('draw-btn'),
+  recentList: document.getElementById('recent-list'),
+};
+
+els.archiveStat.innerHTML = SCRAPE_NOTE;
+
+let lastIndex = -1;
+const recent = [];
+
+function fmtDate(d) {
+  const parts = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10) + ', ' + parts[0];
+}
+
+function draw() {
+  let idx;
+  do {
+    idx = Math.floor(Math.random() * VIC_IDEAS.length);
+  } while (idx === lastIndex && VIC_IDEAS.length > 1);
+  lastIndex = idx;
+
+  const row = VIC_IDEAS[idx];
+  const keyid = row[0], slug = row[1], company = row[2], ticker = row[3], date = row[4];
+  const url = 'https://valueinvestorsclub.com/idea/' + encodeURIComponent(slug).replace(/%2F/g, '/') + '/' + keyid;
+
+  els.tickerBig.textContent = ticker;
+  els.companyName.textContent = company;
+  els.dateAdded.textContent = fmtDate(date);
+  els.openLink.href = url;
+
+  recent.unshift({ ticker: ticker, company: company });
+  if (recent.length > 5) recent.pop();
+  els.recentList.innerHTML = recent.map(function (r) {
+    return '<li><span class="rt">' + r.ticker + '</span><span>' + r.company + '</span></li>';
+  }).join('');
+}
+
+els.drawBtn.addEventListener('click', draw);
+draw();
+</script>
